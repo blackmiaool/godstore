@@ -1,16 +1,34 @@
 const path = require('path');
 const fs = require('fs');
 
-module.exports = traverseFolder.bind(undefined, '');
-function traverseFolder(folderPath, targetPath, handler) {
+module.exports = function (targetPath, handler) {
+    const rootPath = targetPath;
+
+    return new Promise((resolve) => {
+        fs.readdir(targetPath, (err, files) => {
+            handler({
+                path: '/',
+                filename: '/',
+                directory: true,
+                files,
+            });
+            traverseFolder({ path: '', files }, targetPath, handler, rootPath).then((result) => {
+                resolve(result);
+            });
+        });
+    });
+};
+function traverseFolder(folder, targetPath, handler, rootPath) {
     return new Promise((resolve, reject) => {
         const folders = [];
-        fs.readdir(path.join(targetPath, folderPath), (err, files) => {
+        const finalPath = path.join(targetPath, folder.path);
+        // console.log('finalPath', finalPath);
+        fs.readdir(finalPath, (err, files) => {
             if (err) {
                 reject(err);
             }
             const filePromise = files.map(filename => new Promise((resolveFile) => {
-                const filePath = path.join(folderPath, filename);
+                const filePath = path.join(folder.path, filename);
                 const fullPath = path.join(targetPath, filePath);
 
                 fs.stat(fullPath, (errStat, stat) => {
@@ -18,23 +36,37 @@ function traverseFolder(folderPath, targetPath, handler) {
                         reject(errStat);
                     }
                     const directory = stat.isDirectory();
-                    if (directory) {
-                        folders.push(filePath);
-                    }
-
-                    const params = {
-                        fullPath,
-                        filename,
-                        directory,
-                    };
-                    if (handler) {
-                        handler(params);
-                    }
-                    resolveFile();
+                    new Promise(((resolve) => {
+                        if (directory) {
+                            fs.readdir(fullPath, (err, files) => {
+                                if (err) {
+                                    reject(err);
+                                }
+                                folders.push({ path: filePath, files });
+                                resolve(files);
+                            });
+                        } else {
+                            resolve();
+                        }
+                    })).then((files) => {
+                        // console.log('fullPath', fullPath);
+                        const params = {
+                            path: `/${path.relative(rootPath, fullPath)}`,
+                            filename,
+                            directory,
+                        };
+                        if (files) {
+                            params.files = files;
+                        }
+                        if (handler) {
+                            handler(params);
+                        }
+                        resolveFile();
+                    });
                 });
             }));
             Promise.all(filePromise)
-                .then(() => Promise.all(folders.map(folder => traverseFolder(folder, targetPath, handler))))
+                .then(() => Promise.all(folders.map(folder => traverseFolder(folder, targetPath, handler, rootPath))))
                 .then(resolve);
         });
     });
