@@ -11,6 +11,14 @@
         "func-names": 0,
         "consistent-return": 0,
         "no-param-reassign": 0,
-        "quotes": 0
+        "quotes": 0,
+        "no-new": 0,
+        "no-unused-expressions": 0,
+        "no-shadow": 0,
+        "guard-for-in": 0,
+        "no-restricted-syntax": 0,
+        "comma-dangle": 0,
+        "no-await-in-loop": 0,
+        "no-continue": 0
     }
 }

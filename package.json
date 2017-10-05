@@ -1,36 +1,38 @@
 {
-  "name": "god10store",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon client.js"
-  },
-  "nodemonConfig": {
-    "ignore": [
-      "source/*",
-      "target/*"
-    ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/blackmiaool/god10store.git"
-  },
-  "author": "blackmiaool",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/blackmiaool/god10store/issues"
-  },
-  "homepage": "https://github.com/blackmiaool/god10store#readme",
-  "dependencies": {
-    "blacksocket.io": "^1.0.16",
-    "chalk": "^2.1.0",
-    "watch": "^1.0.2"
-  },
-  "devDependencies": {
-    "eslint": "^4.8.0",
-    "eslint-config-airbnb": "^15.1.0",
-    "eslint-plugin-import": "^2.7.0"
-  }
+    "name": "god10store",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "nodemon src/client/client.js"
+    },
+    "nodemonConfig": {
+        "ignore": [
+            "source/*",
+            "target/*"
+        ]
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/blackmiaool/god10store.git"
+    },
+    "author": "blackmiaool",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/blackmiaool/god10store/issues"
+    },
+    "homepage": "https://github.com/blackmiaool/god10store#readme",
+    "dependencies": {
+        "blacksocket.io": "^1.0.18",
+        "chalk": "^2.1.0",
+        "mkdirp": "^0.5.1",
+        "rimraf": "^2.6.2",
+        "watch": "^1.0.2"
+    },
+    "devDependencies": {
+        "eslint": "^4.8.0",
+        "eslint-config-airbnb": "^15.1.0",
+        "eslint-plugin-import": "^2.7.0"
+    }
 }

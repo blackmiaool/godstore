@@ -1,9 +1,13 @@
 const path = require('path');
 const fs = require('fs');
 
-module.exports = function (targetPath, handler) {
+module.exports = function (targetPath, inputHandler) {
     const rootPath = targetPath;
-
+    const list = [];
+    function handler(info) {
+        list.push(info);
+        inputHandler(info);
+    }
     return new Promise((resolve) => {
         fs.readdir(targetPath, (err, files) => {
             handler({
@@ -12,9 +16,7 @@ module.exports = function (targetPath, handler) {
                 directory: true,
                 files,
             });
-            traverseFolder({ path: '', files }, targetPath, handler, rootPath).then((result) => {
-                resolve(result);
-            });
+            traverseFolder({ path: '', files }, targetPath, handler, rootPath).then(() => resolve(list));
         });
     });
 };
@@ -27,6 +29,10 @@ function traverseFolder(folder, targetPath, handler, rootPath) {
             if (err) {
                 reject(err);
             }
+            if (!files) {
+                resolve();
+                return;
+            }
             const filePromise = files.map(filename => new Promise((resolveFile) => {
                 const filePath = path.join(folder.path, filename);
                 const fullPath = path.join(targetPath, filePath);
@@ -35,6 +41,7 @@ function traverseFolder(folder, targetPath, handler, rootPath) {
                     if (errStat) {
                         reject(errStat);
                     }
+
                     const directory = stat.isDirectory();
                     new Promise(((resolve) => {
                         if (directory) {
@@ -54,6 +61,7 @@ function traverseFolder(folder, targetPath, handler, rootPath) {
                             path: `/${path.relative(rootPath, fullPath)}`,
                             filename,
                             directory,
+                            mtime: stat.mtime.getTime(),
                         };
                         if (files) {
                             params.files = files;
