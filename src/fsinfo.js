@@ -6,7 +6,7 @@ module.exports = function (targetPath, inputHandler) {
     const list = [];
     function handler(info) {
         list.push(info);
-        inputHandler(info);
+        inputHandler && inputHandler(info);
     }
     return new Promise((resolve) => {
         fs.readdir(targetPath, (err, files) => {
