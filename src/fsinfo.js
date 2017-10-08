@@ -1,81 +1,66 @@
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 
-module.exports = function (targetPath, inputHandler) {
+module.exports = async function (targetPath, opt = {}) {
     const rootPath = targetPath;
     const list = [];
+    const stat = await fs.stat(targetPath);
+    const isDirectory = stat.isDirectory();
     function handler(info) {
         list.push(info);
-        inputHandler && inputHandler(info);
     }
-    return new Promise((resolve) => {
-        fs.readdir(targetPath, (err, files) => {
-            handler({
-                path: '/',
-                filename: '/',
-                directory: true,
-                files,
-            });
-            traverseFolder({ path: '', files }, targetPath, handler, rootPath).then(() => resolve(list));
+    if (isDirectory) {
+        const files = await fs.readdir(targetPath);
+        handler({
+            path: '/',
+            filename: '/',
+            directory: true,
+            files,
         });
-    });
+        await traverseFolder({ path: '', files }, targetPath, handler, rootPath, opt);
+    } else {
+        handler({
+            path: '/',
+            filename: path.parse(targetPath).base,
+            directory: false,
+        });
+    }
+    return list;
 };
-function traverseFolder(folder, targetPath, handler, rootPath) {
-    return new Promise((resolve, reject) => {
-        const folders = [];
-        const finalPath = path.join(targetPath, folder.path);
-        // console.log('finalPath', finalPath);
-        fs.readdir(finalPath, (err, files) => {
-            if (err) {
-                reject(err);
-            }
-            if (!files) {
-                resolve();
-                return;
-            }
-            const filePromise = files.map(filename => new Promise((resolveFile) => {
-                const filePath = path.join(folder.path, filename);
-                const fullPath = path.join(targetPath, filePath);
+async function traverseFolder(folder, targetPath, handler, rootPath, opt) {
+    const folders = [];
+    const finalPath = path.join(targetPath, folder.path);
 
-                fs.stat(fullPath, (errStat, stat) => {
-                    if (errStat) {
-                        reject(errStat);
-                    }
+    const files = await fs.readdir(finalPath);
+    if (!files) {
+        return;
+    }
+    await Promise.all(files.map(async (filename) => {
+        const filePath = path.join(folder.path, filename);
+        const fullPath = path.join(targetPath, filePath);
 
-                    const directory = stat.isDirectory();
-                    new Promise(((resolve) => {
-                        if (directory) {
-                            fs.readdir(fullPath, (err, files) => {
-                                if (err) {
-                                    reject(err);
-                                }
-                                folders.push({ path: filePath, files });
-                                resolve(files);
-                            });
-                        } else {
-                            resolve();
-                        }
-                    })).then((files) => {
-                        // console.log('fullPath', fullPath);
-                        const params = {
-                            path: `/${path.relative(rootPath, fullPath)}`,
-                            filename,
-                            directory,
-                            mtime: stat.mtime.getTime(),
-                        };
-                        if (files) {
-                            params.files = files;
-                        }
-                        if (handler) {
-                            handler(params);
-                        }
-                        resolveFile();
-                    });
-                });
-            }));
-            Promise.all(filePromise)
-                .then(() => Promise.all(folders.map(folder => traverseFolder(folder, targetPath, handler, rootPath))))
-                .then(resolve);
-        });
-    });
+        const stat = await fs.stat(fullPath);
+        const isDirectory = stat.isDirectory();
+
+        const params = {
+            path: `/${path.relative(rootPath, fullPath)}`,
+            filename,
+            directory: isDirectory,
+            mtime: stat.mtime.getTime(),
+        };
+        if (opt.read && !isDirectory) {
+            const content = await fs.readFile(fullPath);
+            params.content = content.buffer;
+        }
+
+        if (isDirectory) {
+            const files = await fs.readdir(fullPath);
+            params.files = files;
+            folders.push({ path: filePath, files });
+        }
+        handler && handler(params);
+    }));
+    await Promise.all(folders.map(foldername =>
+        traverseFolder(foldername, targetPath, handler, rootPath, opt)
+    ));
 }

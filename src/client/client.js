@@ -30,13 +30,16 @@ async function copy(data) {
             const pathThis = path.join(data[0], li.path.slice(1));
             const targetPath = path.join(data[1], li.path.slice(1));
             const buf = await fs.readFile(pathThis);
+            console.log('copystart');
             await socket.emit('copy', {
                 path: targetPath,
                 data: buf.buffer
             }, true);
+            console.log('copydone');
         }
     } else {
         const buf = await fs.readFile(data[0]);
+
         await socket.emit('copy', {
             path: data[1].slice(1),
             data: buf.buffer
@@ -68,6 +71,9 @@ async function onMessage(event, data) {
 
         case 'no-delete':
             console.log('%s: %s extraneous but not deleted (use %s)', chalk.bold.dim('IGNORED'), chalk.yellow(path.relative(root, data)), chalk.blue('--delete'));
+            break;
+        case 'fetch':
+            console.log('fetch', data);
             break;
         default:
     }
