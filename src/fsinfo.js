@@ -12,15 +12,15 @@ module.exports = async function (targetPath, opt = {}) {
     if (isDirectory) {
         const files = await fs.readdir(targetPath);
         handler({
-            path: '/',
-            filename: '/',
+            path: '',
+            filename: '',
             directory: true,
             files,
         });
         await traverseFolder({ path: '', files }, targetPath, handler, rootPath, opt);
     } else {
         handler({
-            path: '/',
+            path: '',
             filename: path.parse(targetPath).base,
             directory: false,
         });
@@ -43,7 +43,7 @@ async function traverseFolder(folder, targetPath, handler, rootPath, opt) {
         const isDirectory = stat.isDirectory();
 
         const params = {
-            path: `/${path.relative(rootPath, fullPath)}`,
+            path: `${path.relative(rootPath, fullPath)}`,
             filename,
             directory: isDirectory,
             mtime: stat.mtime.getTime(),
