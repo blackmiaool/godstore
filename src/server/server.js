@@ -20,8 +20,8 @@ process.on('unhandledRejection', (reason, p) => {
     // application specific logging, throwing an error, or other logic here
 });
 async function startSync(socket) {
-    const list = await socket.emit({ promise, event: 'get-file-list' });
-
+    const list = await socket.emitp('get-file-list');
+    console.log(list)
     const map = {};
     list.forEach((li) => {
         map[li.path] = li;
@@ -46,7 +46,7 @@ async function startSync(socket) {
                 const pathThis = Path.join(data[0], li.path);
                 const targetPath = Path.join(data[1], li.path);
                 const buf = await fs.readFile(pathThis);
-                await socket.emit({ event: 'copy', promise }, {
+                await socket.emitp('copy', {
                     path: targetPath,
                     data: buf.buffer
                 });
@@ -54,7 +54,7 @@ async function startSync(socket) {
         } else {
             const buf = await fs.readFile(data[0]);
 
-            await socket.emit({ event: 'copy', promise }, {
+            await socket.emitp('copy', {
                 path: data[1],
                 data: buf.buffer
             });
@@ -91,18 +91,29 @@ io.on('connection', async (socket) => {
     socket.on('sync-changes', (queue) => {
         console.log(queue);
         queue.forEach(({ event, path }) => {
-
+            switch (event) {
+                case 'addDir':
+                    socket.emit("fetch", path, (list) => {
+                        if (!list) {
+                            return;
+                        }
+                        console.log(list);
+                        list.forEach((file) => {
+                            if (!file.directory) {
+                                const filepath = Path.join(targetFolder, path);
+                                fs.outputFile(filepath, file.content);
+                            }
+                        });
+                    });
+                    break;
+                default:
+                    break;
+            }
         });
     });
-    await socket.emit({
-        event: 'start-sync',
-        promise,
-    });
+    await socket.emitp('start-sync');
     await startSync(socket);
-    await socket.emit({
-        event: 'end-sync',
-        promise,
-    });
+    await socket.emitp('end-sync');
     console.log('synchronize finished');
 });
 process.on('unhandledRejection', (reason, p) => {
