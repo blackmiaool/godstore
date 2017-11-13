@@ -21,7 +21,7 @@ process.on('unhandledRejection', (reason, p) => {
 });
 async function startSync(socket) {
     const list = await socket.emitp('get-file-list');
-    console.log(list)
+    console.log('list', list)
     const map = {};
     list.forEach((li) => {
         map[li.path] = li;
@@ -29,7 +29,7 @@ async function startSync(socket) {
     });
 
 
-    sync(targetFolder, map, socket, {
+    sync({ path: targetFolder, directory: true }, map, socket, {
         watch: true,
         delete: true,
     }, onMessage);
@@ -37,6 +37,7 @@ async function startSync(socket) {
     async function copy(data) {
         const stat = await fs.stat(data[0]);
         if (stat.isDirectory()) {
+            console.log('a');
             const list = await fsinfo(data[0]);
             for (let i = 0; i < list.length; i++) {
                 const li = list[i];
@@ -52,6 +53,7 @@ async function startSync(socket) {
                 });
             }
         } else {
+            console.log('b');
             const buf = await fs.readFile(data[0]);
 
             await socket.emitp('copy', {
