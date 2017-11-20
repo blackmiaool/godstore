@@ -21,7 +21,7 @@ process.on('unhandledRejection', (reason, p) => {
 });
 async function startSync(socket) {
     const list = await socket.emitp('get-file-list');
-    console.log('list', list)
+    console.log('list', list);
     const map = {};
     list.forEach((li) => {
         map[li.path] = li;
@@ -53,7 +53,6 @@ async function startSync(socket) {
                 });
             }
         } else {
-            console.log('b');
             const buf = await fs.readFile(data[0]);
 
             await socket.emitp('copy', {
@@ -94,6 +93,9 @@ io.on('connection', async (socket) => {
         console.log(queue);
         queue.forEach(({ event, path }) => {
             switch (event) {
+                case 'delete':
+
+                    break;
                 case 'addDir':
                     socket.emit("fetch", path, (list) => {
                         if (!list) {
@@ -108,7 +110,25 @@ io.on('connection', async (socket) => {
                         });
                     });
                     break;
+                case 'add':
+                    socket.emit("fetch", path, (result) => {
+                        const absPath = Path.join(targetFolder, path);
+                        fs.outputFile(absPath, result[0].content);
+                        console.log('fetch result', result[0], absPath);
+                        // if (!list) {
+                        //     return;
+                        // }
+                        // console.log(list);
+                        // list.forEach((file) => {
+                        //     if (!file.directory) {
+                        //         const filepath = Path.join(targetFolder, path);
+                        //         fs.outputFile(filepath, file.content);
+                        //     }
+                        // });
+                    });
+                    break;
                 default:
+                    console.log('unrecognized event', event);
                     break;
             }
         });

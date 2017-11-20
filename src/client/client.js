@@ -98,43 +98,44 @@ class Watch extends EventEmitter {
             .on('ready', () => {
                 console.log('ready to watch');
             })
-            .on('add', (path) => {
+            .on('add', (path, name) => {
+                console.log('path,name', path, name)
                 this.push({
                     event: 'add',
                     path
                 });
-                console.log('add', args);
+                console.log('add');
             })
             .on('addDir', (path) => {
                 this.push({
                     event: 'addDir',
                     path
                 });
-                console.log('adddir', args);
+                console.log('adddir');
             })
             .on('change', (path) => {
                 this.push({
                     event: 'change',
                     path
                 });
-                console.log('change', args);
+                console.log('change');
             })
             .on('unlink', (path) => {
                 this.push({
                     event: 'delete',
                     path
                 });
-                console.log('unlink', args);
+                console.log('unlink', path);
             })
             .on('unlinkDir', (path) => {
                 this.push({
                     event: 'deleteDir',
                     path
                 });
-                console.log('unlinkdir', args);
+                console.log('unlinkdir');
             })
             .on('error', () => {
-                console.log('error', args);
+                console.log('error');
             });
     }
     end() {
@@ -150,6 +151,7 @@ class Watch extends EventEmitter {
     }
     static filterQueue(queue) {
         console.log(queue);
+        console.log('targetFolder', targetFolder)
         queue.forEach((item) => {
             item.path = Path.relative(targetFolder, item.path);
         });
@@ -172,6 +174,7 @@ class Watch extends EventEmitter {
             .forEach((path) => {
                 console.log('p', path);
                 const folders = path.split(Path.sep);
+                console.log('folders', folders);
                 while (folders.length) {
                     folders.pop();
                     const folderPath = Path.join(...folders);
@@ -209,6 +212,7 @@ class Watch extends EventEmitter {
             }
             this.queue = Watch.filterQueue(this.queue);
             this.emit('pour', this.queue);
+            this.queue.length = 0;
         }, this.delay);
     }
 }

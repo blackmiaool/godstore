@@ -19,10 +19,12 @@ module.exports = async function (targetPath, opt = {}) {
         });
         await traverseFolder({ path: '', files }, targetPath, handler, rootPath, opt);
     } else {
+        const content = await fs.readFile(targetPath);
         handler({
             path: '',
             filename: path.parse(targetPath).base,
             directory: false,
+            content: content.buffer
         });
     }
     return list;
