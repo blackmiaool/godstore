@@ -33,7 +33,7 @@ setTimeout(() => {
     });
     socket.on('delete', (params) => {
         console.log('ondelete', params);
-        if (common.islegalPath(params)) {
+        if (!common.islegalPath(params)) {
             console.warn('invalid path', params);
             return;
         }
@@ -42,7 +42,7 @@ setTimeout(() => {
         rimraf(target, () => { });
     });
     socket.on('copy', async ({ path, data }, cb) => {
-        if (common.islegalPath(path)) {
+        if (!common.islegalPath(path)) {
             console.warn('invalid path', path);
             return;
         }
@@ -51,8 +51,18 @@ setTimeout(() => {
         await fs.writeFile(path, data);
         cb();
     });
+    socket.on('copyDir', async ({ path }, cb) => {
+        console.log('copydir')
+        if (!common.islegalPath(path)) {
+            console.warn('invalid path', path);
+            return;
+        }
+        path = Path.join(targetFolder, path);
+        await fs.ensureDir(path);
+        cb();
+    });
     socket.on('fetch', async (path, cb) => {
-        if (common.islegalPath(path)) {
+        if (!common.islegalPath(path)) {
             console.warn('invalid path', path);
             return;
         }
@@ -61,12 +71,10 @@ setTimeout(() => {
         list.forEach((file) => {
             file.path = Path.join(Path.relative(targetFolder, path));
         });
-        console.log(list);
         cb(list);
     });
     const watch = new Watch({ targetFolder });
     watch.on('pour', (queue) => {
-        console.log('pour', queue);
         socket.emit('sync-changes', queue);
     });
     socket.on('start-sync', (cb) => {
@@ -99,7 +107,6 @@ class Watch extends EventEmitter {
                 console.log('ready to watch');
             })
             .on('add', (path, name) => {
-                console.log('path,name', path, name)
                 this.push({
                     event: 'add',
                     path
@@ -150,8 +157,6 @@ class Watch extends EventEmitter {
         this.running = true;
     }
     static filterQueue(queue) {
-        console.log(queue);
-        console.log('targetFolder', targetFolder)
         queue.forEach((item) => {
             item.path = Path.relative(targetFolder, item.path);
         });

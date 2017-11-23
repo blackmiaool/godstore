@@ -1,5 +1,6 @@
 function islegalPath(pathname) {
-    return /\.(\/|$)/.test(pathname);
+    return !pathname.includes('..');
+    // return /\.(\/|$)/.test(pathname);
 }
 module.exports = {
     islegalPath

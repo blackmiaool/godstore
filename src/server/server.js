@@ -8,20 +8,20 @@ const io = require('blacksocket.io/server')(23335, {
 
 const Path = require('path');
 const sync = require('../../node-sync-files');
+const { islegalPath } = require('../common');
 
 const targetFolder = Path.join(__dirname, '..', '..', 'target');
 console.log('targetFolder', targetFolder);
 function testPath(path) {
     return /\.(\/|$)/.test(path);
 }
-const promise = true;
+
 process.on('unhandledRejection', (reason, p) => {
     console.log('Unhandled Rejection at:', p, 'reason:', reason);
     // application specific logging, throwing an error, or other logic here
 });
 async function startSync(socket) {
     const list = await socket.emitp('get-file-list');
-    console.log('list', list);
     const map = {};
     list.forEach((li) => {
         map[li.path] = li;
@@ -30,7 +30,7 @@ async function startSync(socket) {
 
 
     sync({ path: targetFolder, directory: true }, map, socket, {
-        watch: true,
+        watch: false,
         delete: true,
     }, onMessage);
 
@@ -41,16 +41,19 @@ async function startSync(socket) {
             const list = await fsinfo(data[0]);
             for (let i = 0; i < list.length; i++) {
                 const li = list[i];
-                if (li.directory) {
-                    continue;
-                }
                 const pathThis = Path.join(data[0], li.path);
                 const targetPath = Path.join(data[1], li.path);
-                const buf = await fs.readFile(pathThis);
-                await socket.emitp('copy', {
-                    path: targetPath,
-                    data: buf.buffer
-                });
+                if (li.directory) {
+                    await socket.emitp('copyDir', {
+                        path: targetPath
+                    });
+                } else {
+                    const buf = await fs.readFile(pathThis);
+                    await socket.emitp('copy', {
+                        path: targetPath,
+                        data: buf.buffer
+                    });
+                }
             }
         } else {
             const buf = await fs.readFile(data[0]);
@@ -92,9 +95,17 @@ io.on('connection', async (socket) => {
     socket.on('sync-changes', (queue) => {
         console.log(queue);
         queue.forEach(({ event, path }) => {
+            if (!islegalPath(path)) {
+                console.log('illegal path', path);
+                return;
+            }
+            const absPath = Path.join(targetFolder, path);
             switch (event) {
+                case 'deleteDir':
+                    fs.remove(absPath);
+                    break;
                 case 'delete':
-
+                    fs.remove(absPath);
                     break;
                 case 'addDir':
                     socket.emit("fetch", path, (list) => {
@@ -103,28 +114,20 @@ io.on('connection', async (socket) => {
                         }
                         console.log(list);
                         list.forEach((file) => {
+                            if (file.directory && !file.files.length) {
+                                fs.ensureDir(absPath);
+                            }
                             if (!file.directory) {
-                                const filepath = Path.join(targetFolder, path);
+                                const filepath = absPath;
                                 fs.outputFile(filepath, file.content);
                             }
                         });
                     });
                     break;
+                case 'change':
                 case 'add':
                     socket.emit("fetch", path, (result) => {
-                        const absPath = Path.join(targetFolder, path);
                         fs.outputFile(absPath, result[0].content);
-                        console.log('fetch result', result[0], absPath);
-                        // if (!list) {
-                        //     return;
-                        // }
-                        // console.log(list);
-                        // list.forEach((file) => {
-                        //     if (!file.directory) {
-                        //         const filepath = Path.join(targetFolder, path);
-                        //         fs.outputFile(filepath, file.content);
-                        //     }
-                        // });
                     });
                     break;
                 default:
