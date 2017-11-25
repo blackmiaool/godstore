@@ -62,6 +62,7 @@ setTimeout(() => {
         cb();
     });
     socket.on('fetch', async (path, cb) => {
+        console.log('on fetch', path)
         if (!common.islegalPath(path)) {
             console.warn('invalid path', path);
             return;
@@ -71,6 +72,7 @@ setTimeout(() => {
         list.forEach((file) => {
             file.path = Path.join(Path.relative(targetFolder, path));
         });
+        console.log('cb list', list)
         cb(list);
     });
     const watch = new Watch({ targetFolder });
