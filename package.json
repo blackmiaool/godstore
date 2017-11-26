@@ -24,7 +24,7 @@
     },
     "homepage": "https://github.com/blackmiaool/god10store#readme",
     "dependencies": {
-        "blacksocket.io": "^1.0.29",
+        "blacksocket.io": "^1.0.31",
         "chalk": "^2.1.0",
         "chokidar": "^1.7.0",
         "fs-extra": "^4.0.2",
