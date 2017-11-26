@@ -24,6 +24,7 @@ const rl = readline.createInterface({
 
 
 setTimeout(() => {
+    // const socket = io('ws://192.168.199.194:23335/test');
     const socket = io(':23335/test');
     socket.on('first-connect', () => {
         console.log('connected');
@@ -52,7 +53,7 @@ setTimeout(() => {
         cb();
     });
     socket.on('copyDir', async ({ path }, cb) => {
-        console.log('copydir')
+        console.log('copydir');
         if (!common.islegalPath(path)) {
             console.warn('invalid path', path);
             return;
@@ -62,7 +63,7 @@ setTimeout(() => {
         cb();
     });
     socket.on('fetch', async (path, cb) => {
-        console.log('on fetch', path)
+        console.log('on fetch', path);
         if (!common.islegalPath(path)) {
             console.warn('invalid path', path);
             return;
@@ -70,9 +71,10 @@ setTimeout(() => {
         path = Path.join(targetFolder, path);
         const list = await fsinfo(path, { read: true });
         list.forEach((file) => {
-            file.path = Path.join(Path.relative(targetFolder, path));
+            // console.log('original file.path', file.path);
+            file.path = Path.join(Path.relative(targetFolder, path), file.path);
         });
-        console.log('cb list', list)
+        console.log('cb list', list);
         cb(list);
     });
     const watch = new Watch({ targetFolder });

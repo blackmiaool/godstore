@@ -136,30 +136,32 @@ module.exports = async function (source, map, socket, opts = {}, notify) {
         }
         throw new Error('Unexpected case: WTF?');
     }
-    function fetchExtra(fileordir, opts, notify) {
-        socket.emit("fetch", fileordir, async (list) => {
-            for (let i = 0; i < list.length; i++) {
-                const file = list[i];
-                const filepath = path.join(source.path, file.path);
-                if (!file.directory) {
-                    let sourceStat;
-                    try {
-                        sourceStat = await fs.stat(source);
-                    } catch (e) {
-                        await fs.remove(filepath);
-                    }
-                    await fs.outputFile(filepath, file.content);
-                } else {
+    async function fetchExtra(fileordir, opts, notify) {
+        const list = await socket.emitp("fetch", fileordir);
+
+        for (let i = 0; i < list.length; i++) {
+            const file = list[i];
+            const filepath = path.join(source.path, file.path);
+            // const filepath = path.join(folderpath, file.filename);
+            if (!file.directory) {
+                try {
+                    await fs.stat(source);
+                } catch (e) {
                     await fs.remove(filepath);
-                    await fs.ensureDir(filepath);
                 }
+                await fs.outputFile(filepath, file.content);
+            } else {
+                await fs.remove(filepath);
+                await fs.ensureDir(filepath);
             }
-        });
+        }
+
         notify('fetch', fileordir);
         return true;
     }
-    function deleteExtra(fileordir, opts, notify) {
+    async function deleteExtra(fileordir, opts, notify) {
         socket.emit("delete", fileordir);
+        await notify('delete', [fileordir]);
         return true;
     }
 

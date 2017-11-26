@@ -12,9 +12,7 @@ const { islegalPath } = require('../common');
 
 const targetFolder = Path.join(__dirname, '..', '..', 'target');
 console.log('targetFolder', targetFolder);
-function testPath(path) {
-    return /\.(\/|$)/.test(path);
-}
+
 
 process.on('unhandledRejection', (reason, p) => {
     console.log('Unhandled Rejection at:', p, 'reason:', reason);
