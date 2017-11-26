@@ -7,7 +7,7 @@ const io = require('blacksocket.io/server')(23335, {
 });
 
 const Path = require('path');
-const sync = require('../../node-sync-files');
+const sync = require('./sync-files');
 const { islegalPath } = require('../common');
 
 const targetFolder = Path.join(__dirname, '..', '..', 'target');
@@ -37,7 +37,6 @@ async function startSync(socket) {
     async function copy(data) {
         const stat = await fs.stat(data[0]);
         if (stat.isDirectory()) {
-            console.log('a');
             const list = await fsinfo(data[0]);
             for (let i = 0; i < list.length; i++) {
                 const li = list[i];
